@@ -13,6 +13,7 @@
 // limitations under the License.
 
 mod builder;
+mod config;
 mod integration;
 mod parse_crc;
 mod parse_tlv;

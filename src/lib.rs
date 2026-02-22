@@ -41,7 +41,8 @@ pub use types::{
 };
 
 pub use builder::HeaderBuilder;
-pub use config::{ProxyProtocolConfig, VersionPreference};
+pub use config::{ConfigBuilder, ConfigError, ProxyProtocolConfig, VersionPreference};
+pub use ipnet::IpNet;
 pub use listener::ProxyProtocolListener;
 pub use policy::{AcceptAll, ConnPolicy, MixedMode, OptionalProxy, PolicyDecision, TrustedProxies};
 pub use stream::{ProxiedStream, ProxyConnectInfo};

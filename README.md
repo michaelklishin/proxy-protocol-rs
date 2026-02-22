@@ -39,13 +39,13 @@ Before `1.0`, breaking API changes can happen.
 ## Dependency
 
 ```toml
-proxy-protocol-rs = "0.7"
+proxy-protocol-rs = "0.8"
 ```
 
 ### With Axum Integration
 
 ```toml
-proxy-protocol-rs = { version = "0.7", features = ["axum"] }
+proxy-protocol-rs = { version = "0.8", features = ["axum"] }
 ```
 
 ### With Vendor TLV Support
@@ -54,21 +54,21 @@ With [AWS NLB](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/e
 
 ```toml
 # AWS VPC endpoint ID (PP2_TYPE_AWS, 0xEA)
-proxy-protocol-rs = { version = "0.7", features = ["aws"] }
+proxy-protocol-rs = { version = "0.8", features = ["aws"] }
 ```
 
 With [GCP Private Service Connect](https://cloud.google.com/vpc/docs/configure-private-service-connect-producer#proxy-protocol):
 
 ```toml
 # GCP Private Service Connect connection ID (PP2_TYPE_GCE, 0xE0)
-proxy-protocol-rs = { version = "0.7", features = ["gcp"] }
+proxy-protocol-rs = { version = "0.8", features = ["gcp"] }
 ```
 
 With [Azure Private Link](https://learn.microsoft.com/en-us/azure/private-link/private-link-service-overview):
 
 ```toml
 # Azure Private Endpoint LinkID (PP2_TYPE_AZURE, 0xEE)
-proxy-protocol-rs = { version = "0.7", features = ["azure"] }
+proxy-protocol-rs = { version = "0.8", features = ["azure"] }
 ```
 
 
@@ -132,18 +132,30 @@ loop {
 
 ### Configuration
 
+Using the builder:
+
+```rust
+use std::time::Duration;
+use proxy_protocol_rs::{ProxyProtocolConfig, VersionPreference};
+
+let config = ProxyProtocolConfig::builder()
+    .header_timeout(Duration::from_secs(10))
+    .max_header_size(8192)
+    .max_pending_handshakes(512)
+    .version(VersionPreference::V2Only)
+    .build()?;
+```
+
+Or using struct literals with `..Default::default()`:
+
 ```rust
 use std::time::Duration;
 use proxy_protocol_rs::{ProxyProtocolConfig, VersionPreference};
 
 let config = ProxyProtocolConfig {
-    // default: 5s
     header_timeout: Duration::from_secs(10),
-    // default: 4096
     max_header_size: 8192,
-    // default: 1024
     max_pending_handshakes: 512,
-    // default: Both
     version: VersionPreference::V2Only,
     ..Default::default()
 };
@@ -183,16 +195,16 @@ if let Some(dst) = info.destination_inet() {
 Only accept PP headers from known load balancers; reject everyone else:
 
 ```rust
-use proxy_protocol_rs::{ProxyProtocolConfig, ProxyProtocolListener, TrustedProxies};
+use proxy_protocol_rs::{IpNet, ProxyProtocolConfig, ProxyProtocolListener, TrustedProxies};
 
-let policy = TrustedProxies::with_cidrs(
-    std::iter::empty(),
-    ["10.0.0.0/8".parse()?, "172.16.0.0/12".parse()?],
-);
-let config = ProxyProtocolConfig {
-    policy: Arc::new(policy),
-    ..Default::default()
-};
+let cidrs: Vec<IpNet> = vec![
+    "10.0.0.0/8".parse()?,
+    "172.16.0.0/12".parse()?,
+];
+let policy = TrustedProxies::from_ipnets(cidrs);
+let config = ProxyProtocolConfig::builder()
+    .policy(policy)
+    .build()?;
 let pp = ProxyProtocolListener::new(listener, config);
 ```
 
@@ -204,10 +216,9 @@ Accept PP from trusted proxies, pass direct connections through as-is:
 use proxy_protocol_rs::{MixedMode, TrustedProxies, ProxyProtocolConfig, ProxyProtocolListener};
 
 let trusted = TrustedProxies::new(["10.0.0.1".parse()?]);
-let config = ProxyProtocolConfig {
-    policy: Arc::new(MixedMode::new(trusted)),
-    ..Default::default()
-};
+let config = ProxyProtocolConfig::builder()
+    .policy(MixedMode::new(trusted))
+    .build()?;
 let pp = ProxyProtocolListener::new(listener, config);
 ```
 
@@ -216,17 +227,17 @@ let pp = ProxyProtocolListener::new(listener, config);
 Reject connections after parsing, e.g. to block spoofed source addresses:
 
 ```rust
+use std::net::SocketAddr;
 use proxy_protocol_rs::{ProxyProtocolConfig, ProxyInfo};
 
-let config = ProxyProtocolConfig {
-    validator: Some(Arc::new(|info: &ProxyInfo, _peer: std::net::SocketAddr| {
+let config = ProxyProtocolConfig::builder()
+    .validator(|info: &ProxyInfo, _peer: SocketAddr| {
         if info.source_ip().is_some_and(|ip| ip.is_loopback()) {
             return Err("loopback source rejected".into());
         }
         Ok(())
-    })),
-    ..Default::default()
-};
+    })
+    .build()?;
 ```
 
 ### Build and Send a Header

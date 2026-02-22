@@ -70,7 +70,23 @@ impl TrustedProxies {
         }
     }
 
-    pub(crate) fn contains(&self, ip: IpAddr) -> bool {
+    /// Builds from a mixed set of `IpNet`s, automatically splitting
+    /// host-length prefixes (/32 for IPv4, /128 for IPv6) into exact
+    /// matches and the rest into CIDR ranges.
+    pub fn from_ipnets(nets: impl IntoIterator<Item = IpNet>) -> Self {
+        let mut exact = HashSet::new();
+        let mut cidrs = Vec::new();
+        for net in nets {
+            if net.prefix_len() == net.max_prefix_len() {
+                exact.insert(net.addr());
+            } else {
+                cidrs.push(net);
+            }
+        }
+        Self { exact, cidrs }
+    }
+
+    pub fn contains(&self, ip: IpAddr) -> bool {
         self.exact.contains(&ip) || self.cidrs.iter().any(|net| net.contains(&ip))
     }
 }
