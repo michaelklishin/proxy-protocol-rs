@@ -1,0 +1,46 @@
+[package]
+name = "proxy-protocol-rs"
+version = "0.7.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT OR Apache-2.0"
+description = "Tokio-native Proxy Protocol v1/v2 listener wrapper"
+readme = "README.md"
+repository = "https://github.com/michaelklishin/proxy-protocol-rs"
+keywords = ["proxy-protocol", "haproxy", "tokio", "networking"]
+categories = ["network-programming", "asynchronous"]
+
+[dependencies]
+bitflags = "2"
+crc32c = "0.6"
+ipnet = "2"
+thiserror = "2"
+tokio = { version = "1", features = ["net", "io-util", "time", "sync"] }
+axum = { version = "0.8", optional = true }
+tracing = { version = "0.1", optional = true }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1"
+tokio = { version = "1", features = ["net", "io-util", "time", "sync", "macros", "rt-multi-thread", "test-util"] }
+
+[[bench]]
+name = "parse"
+harness = false
+
+[profile.dev]
+debug = "line-tables-only"
+split-debuginfo = "unpacked"
+lto = "off"
+
+[profile.test]
+debug = "line-tables-only"
+split-debuginfo = "unpacked"
+lto = "off"
+
+[features]
+default = []
+axum = ["dep:axum", "dep:tracing"]
+aws = []
+azure = []
+gcp = []
