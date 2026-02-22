@@ -1,4 +1,4 @@
-# A Tokio-native Proxy Protocol (v1 and v2) Implementation in Rust
+# A Proxy Protocol (v1 and v2) Implementation for Rust and Tokio
 
 This crate implements the [Proxy Protocol](https://www.haproxy.org/download/2.9/doc/proxy-protocol.txt) (versions 1 and 2)
 on top of Tokio.
