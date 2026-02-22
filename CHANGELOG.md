@@ -1,5 +1,10 @@
 # proxy-protocol-rs Change Log
 
+## 0.9.0 (in development)
+
+No changes yet.
+
+
 ## 0.8.0 (Feb 22, 2026)
 
 ### Enhancements
